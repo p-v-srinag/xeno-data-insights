@@ -1,47 +1,47 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-generator client {
-  provider = "prisma-client-js"
-}
-
 model Tenant {
-  id        Int       @id @default(autoincrement())
-  name      String    @unique
+  id        Int        @id @default(autoincrement())
+  name      String     @unique
   customers Customer[]
-  products  Product[]
   orders    Order[]
+  products  Product[]
 }
 
 model Customer {
-  id       Int      @id @default(autoincrement())
+  id        Int     @id @default(autoincrement())
   shopifyId String  @unique
-  email    String
-  tenant   Tenant   @relation(fields: [tenantId], references: [id])
-  tenantId Int
-  orders   Order[]
+  email     String
+  tenantId  Int
+  tenant    Tenant  @relation(fields: [tenantId], references: [id])
+  orders    Order[]
 }
 
 model Product {
-  id       Int      @id @default(autoincrement())
+  id        Int     @id @default(autoincrement())
   shopifyId String  @unique
-  title    String
-  price    Float
-  tenant   Tenant   @relation(fields: [tenantId], references: [id])
-  tenantId Int
-  orders   Order[]
+  title     String
+  price     Float
+  tenantId  Int
+  orders    Order[]
+  tenant    Tenant  @relation(fields: [tenantId], references: [id])
 }
 
 model Order {
   id         Int      @id @default(autoincrement())
   shopifyId  String   @unique
-  total      Float
-  tenant     Tenant   @relation(fields: [tenantId], references: [id])
   tenantId   Int
-  customer   Customer @relation(fields: [customerId], references: [id])
+  total      Float
   customerId Int
-  product    Product  @relation(fields: [productId], references: [id])
   productId  Int
+  customer   Customer @relation(fields: [customerId], references: [id])
+  product    Product  @relation(fields: [productId], references: [id])
+  tenant     Tenant   @relation(fields: [tenantId], references: [id])
 }
