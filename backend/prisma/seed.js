@@ -1,5 +1,6 @@
 // prisma/seed.js
 const { PrismaClient } = require("@prisma/client");
+const crypto = require('crypto');
 const prisma = new PrismaClient();
 
 async function main() {
@@ -7,21 +8,23 @@ async function main() {
 
   // Clean existing data
   await prisma.order.deleteMany();
+  await prisma.user.deleteMany();
   await prisma.customer.deleteMany();
   await prisma.product.deleteMany();
   await prisma.tenant.deleteMany();
 
   const NUM_TENANTS = 5;
-  const NUM_PRODUCTS = 100;
-  const NUM_CUSTOMERS = 100;
+  const NUM_PRODUCTS = 20;  // Reduced for faster seeding
+  const NUM_CUSTOMERS = 50; // Reduced for faster seeding
   const NUM_ORDERS = 100;
 
   for (let t = 1; t <= NUM_TENANTS; t++) {
-    // Create tenant with fixed ID
+    const invitationCode = `invite-${crypto.randomBytes(8).toString('hex')}`;
     const tenant = await prisma.tenant.create({
       data: {
         id: t,
         name: `Tenant ${t}`,
+        invitationCode: invitationCode,
       },
     });
 
@@ -31,8 +34,8 @@ async function main() {
       const product = await prisma.product.create({
         data: {
           shopifyId: `t${t}-p${i}`,
-          title: `Tenant ${t} Product ${i}`,
-          price: Math.floor(Math.random() * 150) + 50, // $50-$200
+          title: `Product ${i}`, // Simplified title
+          price: Math.floor(Math.random() * 150) + 50,
           tenantId: tenant.id,
         },
       });
@@ -45,19 +48,23 @@ async function main() {
       const customer = await prisma.customer.create({
         data: {
           shopifyId: `t${t}-c${i}`,
-          email: `tenant${t}-customer${i}@test.com`,
+          email: `customer${i}@tenant${t}.com`,
           tenantId: tenant.id,
         },
       });
       customers.push(customer);
     }
 
-    // Create orders
+    // Create orders with varied dates over the last 20 days
     for (let i = 1; i <= NUM_ORDERS; i++) {
       const randomCustomer = customers[Math.floor(Math.random() * customers.length)];
       const randomProduct = products[Math.floor(Math.random() * products.length)];
-      const quantity = Math.floor(Math.random() * 5) + 1;
+      const quantity = Math.floor(Math.random() * 3) + 1;
       const total = randomProduct.price * quantity;
+      
+      // Create a date in the past 20 days
+      const pastDate = new Date();
+      pastDate.setDate(pastDate.getDate() - Math.floor(Math.random() * 20));
 
       await prisma.order.create({
         data: {
@@ -66,11 +73,11 @@ async function main() {
           customerId: randomCustomer.id,
           productId: randomProduct.id,
           tenantId: tenant.id,
+          createdAt: pastDate, // Assign the random past date
         },
       });
     }
-
-    console.log(`✅ Tenant ${t} seeded: ${NUM_PRODUCTS} products, ${NUM_CUSTOMERS} customers, ${NUM_ORDERS} orders`);
+    console.log(`✅ Tenant ${t} seeded with invitation code: ${invitationCode}`);
   }
 
   console.log("✅ Database seeding complete!");

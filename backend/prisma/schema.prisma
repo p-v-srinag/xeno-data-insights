@@ -8,11 +8,13 @@ datasource db {
 }
 
 model Tenant {
-  id        Int        @id @default(autoincrement())
-  name      String     @unique
-  customers Customer[]
-  orders    Order[]
-  products  Product[]
+  id              Int        @id @default(autoincrement())
+  name            String     @unique
+  invitationCode  String     @unique 
+  customers       Customer[]
+  orders          Order[]
+  products        Product[]
+  users           User[]
 }
 
 model Customer {
@@ -41,7 +43,17 @@ model Order {
   total      Float
   customerId Int
   productId  Int
+  createdAt  DateTime @default(now()) // Add this line
   customer   Customer @relation(fields: [customerId], references: [id])
   product    Product  @relation(fields: [productId], references: [id])
   tenant     Tenant   @relation(fields: [tenantId], references: [id])
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  tenantId  Int
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  createdAt DateTime @default(now())
 }
